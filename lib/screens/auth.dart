@@ -21,6 +21,35 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   var _enteredEmail = '';
   var _enteredPassword = '';
   var _currentPassword = '';
+  var _isListenerSet = false;
+  late final ProviderSubscription _subscription;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isListenerSet) {
+      _isListenerSet = true;
+      _subscription = ref.listenManual<LoadingState>(loadingProvider, (
+        prev,
+        next,
+      ) {
+        if (next is LoadingError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
+  }
 
   void _submit() async {
     final isValid = _formKey.currentState!.validate();
@@ -45,7 +74,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final loadingState = ref.watch(loadingProvider);
-
     return Scaffold(
       appBar: AppBar(),
       body: Container(
@@ -115,6 +143,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           _enteredUsername = username!.trim();
                         });
                       },
+                      // textInputAction: TextInputAction.next,
+                      // onFieldSubmitted: (_) {
+                      //   FocusScope.of(context).nextFocus();
+                      // },
                     ),
                     const SizedBox(height: 10),
                     if (!_isLogin) ...[
@@ -153,6 +185,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             _enteredEmail = email!;
                           });
                         },
+                        // textInputAction: TextInputAction.next,
+                        // onFieldSubmitted: (_) {
+                        //   FocusScope.of(context).nextFocus();
+                        // },
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -188,6 +224,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           _enteredPassword = password!;
                         });
                       },
+                      // textInputAction: TextInputAction.next,
+                      // onFieldSubmitted: (_) {
+                      //   if (_isLogin) {
+                      //     FocusScope.of(context).unfocus(); // closes keyboard
+                      //   } else {
+                      //     FocusScope.of(context).nextFocus();
+                      //   }
+                      // },
                     ),
                     const SizedBox(height: 10),
                     if (!_isLogin) ...[
@@ -218,6 +262,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           }
                           return null;
                         },
+                        // textInputAction: TextInputAction.done,
+                        // onFieldSubmitted: (_) {
+                        //   FocusScope.of(context).unfocus();
+                        // },
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -229,7 +277,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                       child:
                           (loadingState is Loading)
-                              ? const CircularProgressIndicator()
+                              ? CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              )
                               : Text(
                                 _isLogin ? 'Sign in' : 'Sign up',
                                 style: Theme.of(
@@ -293,5 +343,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _subscription.close();
+    super.dispose();
   }
 }

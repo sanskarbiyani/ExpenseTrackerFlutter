@@ -1,14 +1,14 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:message_expense_tracker/constants.dart';
+import 'package:message_expense_tracker/models/base_response.dart';
 import 'package:message_expense_tracker/models/login.dart';
 import 'package:message_expense_tracker/models/users.dart';
 
 class UserService {
-  Future<LoginResponse> registerUser(RegisterRequest request) async {
-    final uri = Uri.parse(
-      "https://267c-2401-4900-1c96-7bf7-cc90-8a3c-ca24-e837.ngrok-free.app/users/register",
-    );
+  Future<APIResponse?> registerUser(RegisterRequest request) async {
+    final uri = Uri.parse("${AppConstants.backendBaseUrl}/users/register");
     final jsonBody = jsonEncode(request.toJson());
     final response = await http.post(
       uri,
@@ -16,11 +16,14 @@ class UserService {
       headers: {'Content-Type': 'application/json'},
     );
 
+    final json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return LoginResponse.fromJson(json);
+      return APIResponse.fromJson(json, (jsonData) {
+        if (jsonData == null) return null;
+        return LoginResponse.fromJson(jsonData as Map<String, dynamic>);
+      });
     } else {
-      throw Exception("Something went wrong");
+      return APIResponse.fromJson(json, (jsonData) => null);
     }
   }
 }

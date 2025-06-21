@@ -1,14 +1,14 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:message_expense_tracker/constants.dart';
+import 'package:message_expense_tracker/models/base_response.dart';
 // My Imports
 import 'package:message_expense_tracker/models/login.dart';
 
 class AuthService {
-  Future<LoginResponse?> login(LoginRequest request) async {
-    final uri = Uri.parse(
-      "https://267c-2401-4900-1c96-7bf7-cc90-8a3c-ca24-e837.ngrok-free.app/auth/login",
-    );
+  Future<APIResponse?> login(LoginRequest request) async {
+    final uri = Uri.parse("${AppConstants.backendBaseUrl}/auth/login");
     final jsonBody = jsonEncode(request.toJson());
     final response = await http.post(
       uri,
@@ -16,13 +16,14 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
     );
 
+    final json = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      return LoginResponse.fromJson(json);
-    } else if (response.statusCode == 401) {
-      throw Exception("Invalid credentials");
+      return APIResponse.fromJson(json, (jsonData) {
+        if (jsonData == null) return null;
+        return LoginResponse.fromJson(jsonData as Map<String, dynamic>);
+      });
     } else {
-      throw Exception("Something went wrong");
+      return APIResponse.fromJson(json, (jsonData) => null);
     }
   }
 }

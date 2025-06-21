@@ -27,11 +27,16 @@ class UserNotifier extends StateNotifier<UserState> {
         email: req.email,
         username: req.username,
       );
-      final loginResponse = await _userService.registerUser(registerRequest);
-      if (loginResponse != null) {
-        loadingState.setSucess();
-        authState.markAuthenticated(loginResponse);
-        userState.setUser(loginResponse.user);
+      final apiResponse = await _userService.registerUser(registerRequest);
+      if (apiResponse != null) {
+        if (apiResponse.success) {
+          loadingState.setSucess();
+          authState.markAuthenticated(apiResponse.data);
+          userState.setUser(apiResponse.data.user);
+        } else {
+          loadingState.setError(apiResponse.error ?? "Something went wrong.");
+          authState.logout();
+        }
       } else {
         loadingState.setError("Something went wrong");
         authState.logout();

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/login.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
+import 'package:message_expense_tracker/providers/user.dart';
 import 'package:message_expense_tracker/services/auth_service.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -10,30 +11,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._authService, this._ref) : super(const UnAuthenticated());
 
-  Future<void> login({
+  Future<bool> login({
     required String username,
     required String password,
   }) async {
     final loadingNotifier = _ref.read(loadingProvider.notifier);
-    // final userNotifier = _ref.read(userProvider.notifier);
+    final userNotifier = _ref.read(userProvider.notifier);
     loadingNotifier.startLoading();
     try {
       final loginRequest = LoginRequest(username: username, password: password);
-      final tokenResponse = await _authService.login(loginRequest);
+      final apiResponse = await _authService.login(loginRequest);
 
-      if (tokenResponse != null) {
+      if (apiResponse != null && apiResponse.success) {
         loadingNotifier.setSucess();
+        final tokenResponse = apiResponse.data;
         state = Authenticated(
           accessToken: tokenResponse.accessToken,
           tokenType: tokenResponse.tokenType,
         );
+        userNotifier.setUser(apiResponse.data.user);
+        return true;
       } else {
-        loadingNotifier.setError("Something went wrong");
+        loadingNotifier.setError(apiResponse?.error ?? "Something went wrong");
         state = const UnAuthenticated();
+        return false;
       }
     } catch (e) {
       loadingNotifier.setError("Something went wrong");
       state = const UnAuthenticated();
+      return false;
     }
   }
 

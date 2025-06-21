@@ -23,33 +23,25 @@ class RegisterRequest {
 }
 
 class LoggedInUser {
+  final int id;
   final String username;
   final String email;
-  final String? firstName;
-  final String? lastName;
 
   const LoggedInUser({
+    required this.id,
     required this.username,
     required this.email,
-    this.firstName,
-    this.lastName,
   });
 
   factory LoggedInUser.fromJson(Map<String, dynamic> json) {
     return LoggedInUser(
+      id: json['id'],
       username: json['username'],
       email: json['email'],
-      firstName: json['first_name'] ?? "",
-      lastName: json['last_name'] ?? "",
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'username': username,
-      'email': email,
-      'firstName': firstName,
-      'lastName': lastName,
-    };
+    return {'id': id, 'username': username, 'email': email};
   }
 }
