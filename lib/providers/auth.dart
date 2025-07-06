@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/login.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
@@ -8,6 +11,7 @@ import 'package:message_expense_tracker/services/auth_service.dart';
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
   final Ref _ref;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   AuthNotifier(this._authService, this._ref) : super(const UnAuthenticated());
 
@@ -30,6 +34,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
           tokenType: tokenResponse.tokenType,
         );
         userNotifier.setUser(apiResponse.data.user);
+        await _storage.write(
+          key: 'authDetails',
+          value: jsonEncode(apiResponse.data.toJson()),
+        );
         return true;
       } else {
         loadingNotifier.setError(apiResponse?.error ?? "Something went wrong");
@@ -44,7 +52,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    state = const UnAuthenticated();
+    state = UnAuthenticated();
   }
 
   void markAuthenticated(LoginResponse response) {
@@ -52,6 +60,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
       accessToken: response.accessToken,
       tokenType: response.tokenType,
     );
+  }
+
+  Future<void> tryAutoLogin() async {
+    final loadingStateProvider = _ref.read(loadingProvider.notifier);
+    final userNotifier = _ref.read(userProvider.notifier);
+    loadingStateProvider.startLoading();
+
+    final authDetails = await _storage.read(key: 'authDetails');
+
+    if (authDetails != null) {
+      final LoginResponse userDetails = LoginResponse.fromJson(
+        jsonDecode(authDetails),
+      );
+      state = Authenticated(
+        accessToken: userDetails.accessToken,
+        tokenType: userDetails.tokenType,
+      );
+      userNotifier.setUser(userDetails.user);
+    }
+    loadingStateProvider.setSucess();
   }
 }
 

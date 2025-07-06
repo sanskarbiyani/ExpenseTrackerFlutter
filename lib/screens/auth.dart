@@ -36,7 +36,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         if (next is LoadingError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(next.errorMessage),
+              content: Text(
+                next.errorMessage,
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
+              ),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -143,10 +146,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           _enteredUsername = username!.trim();
                         });
                       },
-                      // textInputAction: TextInputAction.next,
-                      // onFieldSubmitted: (_) {
-                      //   FocusScope.of(context).nextFocus();
-                      // },
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 10),
                     if (!_isLogin) ...[
@@ -162,8 +162,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        enableSuggestions: false,
-                        autocorrect: false,
                         keyboardType: TextInputType.emailAddress,
                         autovalidateMode: AutovalidateMode.onUnfocus,
                         validator: (value) {
@@ -185,10 +183,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             _enteredEmail = email!;
                           });
                         },
-                        // textInputAction: TextInputAction.next,
-                        // onFieldSubmitted: (_) {
-                        //   FocusScope.of(context).nextFocus();
-                        // },
+                        textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -224,14 +219,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           _enteredPassword = password!;
                         });
                       },
-                      // textInputAction: TextInputAction.next,
-                      // onFieldSubmitted: (_) {
-                      //   if (_isLogin) {
-                      //     FocusScope.of(context).unfocus(); // closes keyboard
-                      //   } else {
-                      //     FocusScope.of(context).nextFocus();
-                      //   }
-                      // },
+                      textInputAction:
+                          _isLogin
+                              ? TextInputAction.done
+                              : TextInputAction.next,
                     ),
                     const SizedBox(height: 10),
                     if (!_isLogin) ...[
@@ -262,10 +253,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           }
                           return null;
                         },
-                        // textInputAction: TextInputAction.done,
-                        // onFieldSubmitted: (_) {
-                        //   FocusScope.of(context).unfocus();
-                        // },
+                        textInputAction: TextInputAction.done,
                       ),
                       const SizedBox(height: 10),
                     ],

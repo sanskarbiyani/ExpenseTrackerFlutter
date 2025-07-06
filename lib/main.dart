@@ -9,8 +9,14 @@ import 'package:message_expense_tracker/screens/auth.dart';
 import 'package:message_expense_tracker/screens/home.dart';
 import 'package:message_expense_tracker/theme_details.dart';
 
-void main() {
-  runApp(ProviderScope(child: const MyApp()));
+void main() async {
+  // if (kDebugMode) {
+  //   debugPaintSizeEnabled = true;
+  // }
+  WidgetsFlutterBinding.ensureInitialized();
+  final container = ProviderContainer();
+  await container.read(authProvider.notifier).tryAutoLogin();
+  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 
 class MyApp extends ConsumerWidget {

@@ -2,13 +2,12 @@ import 'package:message_expense_tracker/models/users.dart';
 
 class LoginRequest {
   final String username;
-  final String email = "";
   final String password;
 
   const LoginRequest({required this.username, required this.password});
 
   Map<String, dynamic> toJson() {
-    return {'username': username, 'password': password, 'email': email};
+    return {'username': username, 'password': password};
   }
 }
 
@@ -29,5 +28,14 @@ class LoginResponse {
       tokenType: json['token_type'],
       user: LoggedInUser.fromJson(json['user']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{
+      'access_token': accessToken,
+      'token_type': tokenType,
+      'user': user.toJson(),
+    };
+    return map;
   }
 }

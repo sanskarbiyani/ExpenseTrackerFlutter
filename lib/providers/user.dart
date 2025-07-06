@@ -6,8 +6,8 @@ import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/services/user_service.dart';
 
 class UserNotifier extends StateNotifier<UserState> {
-  UserService _userService;
-  Ref _ref;
+  final UserService _userService;
+  final Ref _ref;
 
   UserNotifier(this._userService, this._ref) : super(const UserInitial());
 
@@ -46,6 +46,8 @@ class UserNotifier extends StateNotifier<UserState> {
       authState.logout();
     }
   }
+
+  Future<void> getUserTags() async {}
 }
 
 final userProvider = StateNotifierProvider<UserNotifier, UserState>(
