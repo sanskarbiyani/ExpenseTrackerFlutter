@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/loading_state.dart';
 import 'package:message_expense_tracker/models/transaction.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/providers/transaction.dart';
+import 'package:message_expense_tracker/screens/auth.dart';
+
+import '../providers/auth.dart';
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
   const AddExpenseScreen({super.key});
@@ -47,8 +51,15 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       title: '',
     );
 
+    final authState = ref.read(authProvider);
+    if (authState is UnAuthenticated) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (ctx) => AuthScreen()));
+    }
+    final token = (authState as Authenticated).accessToken;
     String msg = await ref
-        .read(transactionProvider.notifier)
+        .read(transactionProvider(token).notifier)
         .addTransaction(transaction);
 
     var loadingState = ref.watch(loadingProvider);

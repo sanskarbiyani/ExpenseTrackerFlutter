@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/base_response.dart';
 import 'package:message_expense_tracker/models/transaction.dart';
-import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/services/transaction_service.dart';
 
@@ -53,12 +51,10 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   }
 }
 
-final transactionProvider =
-    StateNotifierProvider<TransactionNotifier, List<Transaction>>((ref) {
-      final authState = ref.watch(authProvider);
-      final token = (authState as Authenticated).accessToken;
-      return TransactionNotifier(
-        TransactionService(token: token, ref: ref),
-        ref,
-      );
-    });
+final transactionProvider = StateNotifierProvider.family<
+  TransactionNotifier,
+  List<Transaction>,
+  String
+>((ref, token) {
+  return TransactionNotifier(TransactionService(token: token, ref: ref), ref);
+});

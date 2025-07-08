@@ -13,11 +13,13 @@ class LoginRequest {
 
 class LoginResponse {
   final String accessToken;
+  final String refreshToken;
   final String tokenType;
-  final LoggedInUser user;
+  final LoggedInUser? user;
 
   const LoginResponse({
     required this.accessToken,
+    required this.refreshToken,
     required this.tokenType,
     required this.user,
   });
@@ -25,6 +27,7 @@ class LoginResponse {
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
       accessToken: json['access_token'],
+      refreshToken: json['refresh_token'],
       tokenType: json['token_type'],
       user: LoggedInUser.fromJson(json['user']),
     );
@@ -33,8 +36,9 @@ class LoginResponse {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
       'access_token': accessToken,
+      'refresh_token': refreshToken,
       'token_type': tokenType,
-      'user': user.toJson(),
+      'user': user?.toJson(),
     };
     return map;
   }

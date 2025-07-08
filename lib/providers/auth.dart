@@ -52,6 +52,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await _storage.delete(key: 'authDetails');
     state = UnAuthenticated();
   }
 
@@ -70,14 +71,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final authDetails = await _storage.read(key: 'authDetails');
 
     if (authDetails != null) {
-      final LoginResponse userDetails = LoginResponse.fromJson(
+      LoginResponse userDetails = LoginResponse.fromJson(
         jsonDecode(authDetails),
       );
-      state = Authenticated(
-        accessToken: userDetails.accessToken,
-        tokenType: userDetails.tokenType,
+      var response = await _authService.refreshAccessToken(
+        userDetails.refreshToken,
       );
-      userNotifier.setUser(userDetails.user);
+      if (response != null && response.success) {
+        userDetails = response.data;
+        state = Authenticated(
+          accessToken: userDetails.accessToken,
+          tokenType: userDetails.tokenType,
+        );
+        userNotifier.setUser(userDetails.user!);
+      }
     }
     loadingStateProvider.setSucess();
   }

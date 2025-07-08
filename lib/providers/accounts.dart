@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_expense_tracker/models/account.dart';
-import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/base_response.dart';
-import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/services/account_service.dart';
 
 import 'loading_state.dart';
@@ -32,8 +30,6 @@ class AccountListNotifier extends StateNotifier<List<Account>> {
 }
 
 final accountsProvider =
-    StateNotifierProvider<AccountListNotifier, List<Account>>((ref) {
-      final authState = ref.watch(authProvider);
-      final token = (authState as Authenticated).accessToken;
-      return AccountListNotifier(ref, AccountService(token));
-    });
+    StateNotifierProvider.family<AccountListNotifier, List<Account>, String>(
+      (ref, token) => AccountListNotifier(ref, AccountService(token)),
+    );

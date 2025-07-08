@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/loading_state.dart';
 import 'package:message_expense_tracker/models/transaction.dart';
+import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/providers/transaction.dart';
+import 'package:message_expense_tracker/screens/auth.dart';
 
 class TransactionList extends ConsumerStatefulWidget {
   const TransactionList({super.key, required this.selectedMonth});
@@ -18,16 +21,30 @@ class _TransactionListState extends ConsumerState<TransactionList> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref
-          .read(transactionProvider.notifier)
-          .fetchTransactions(widget.selectedMonth),
-    );
+    Future.microtask(() {
+      final authState = ref.read(authProvider);
+
+      if (authState is Authenticated) {
+        ref
+            .read(transactionProvider(authState.accessToken).notifier)
+            .fetchTransactions(widget.selectedMonth);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final transactionList = ref.watch(transactionProvider);
+    final authState = ref.watch(authProvider);
+
+    if (authState is UnAuthenticated) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (context) => AuthScreen()));
+    }
+
+    final transactionList = ref.watch(
+      transactionProvider((authState as Authenticated).accessToken),
+    );
     final loadingState = ref.watch(loadingProvider);
 
     Widget content = SliverToBoxAdapter(
@@ -60,7 +77,8 @@ class _TransactionListState extends ConsumerState<TransactionList> {
                   Icon(
                     Icons.currency_rupee,
                     color:
-                        transactionList[index].transactionType == TransactionType.income
+                        transactionList[index].transactionType ==
+                                TransactionType.income
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.error,
                   ),
