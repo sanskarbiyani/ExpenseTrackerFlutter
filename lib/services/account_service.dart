@@ -1,9 +1,10 @@
 import 'dart:convert';
 
-import 'package:message_expense_tracker/constants.dart';
 import 'package:message_expense_tracker/middleware/auth_http_client.dart';
 import 'package:message_expense_tracker/models/account.dart';
 import 'package:message_expense_tracker/models/base_response.dart';
+
+import '../constants.dart';
 
 class AccountService {
   final String token;
@@ -14,7 +15,7 @@ class AccountService {
     final client = AuthHttpClient(token);
     try {
       final response = await client.get(
-        Uri.parse("${AppConstants.backendBaseUrl}/accounts}"),
+        Uri.parse("${AppConstants.backendBaseUrl}/accounts"),
       );
       final json = jsonDecode(response.body);
       if (response.statusCode == 200) {

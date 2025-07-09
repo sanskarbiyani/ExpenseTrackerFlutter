@@ -12,6 +12,7 @@ class AccountListNotifier extends StateNotifier<List<Account>> {
   AccountListNotifier(this._ref, this._accountService) : super([]);
 
   Future<void> fetchAccounts() async {
+    if (state.isNotEmpty) return;
     final loadingState = _ref.read(loadingProvider.notifier);
     loadingState.startLoading();
 

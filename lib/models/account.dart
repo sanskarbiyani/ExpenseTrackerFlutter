@@ -1,7 +1,7 @@
 class Account {
   final String name;
   final String description;
-  final int balance;
+  final double balance;
   final int id;
 
   Account({

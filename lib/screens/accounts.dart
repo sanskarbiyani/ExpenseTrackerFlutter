@@ -1,34 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:message_expense_tracker/models/account.dart';
 import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/providers/accounts.dart';
 import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/screens/auth.dart';
 import 'package:message_expense_tracker/widgets/drawer.dart';
 
-class AccountScreen extends ConsumerWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    var authState = ref.watch(authProvider);
-    if (authState is UnAuthenticated) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => AuthScreen()));
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends ConsumerState<AccountScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Defer work to after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      if (authState is UnAuthenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+        );
+        return;
+      }
+
+      final token = (authState as Authenticated).accessToken;
+      final accountList = ref.read(accountsProvider(token));
+
+      if (accountList.isEmpty) {
+        final notifier = ref.read(accountsProvider(token).notifier);
+        notifier.fetchAccounts();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    if (authState is! Authenticated) {
+      return const SizedBox(); // Safe fallback UI
     }
 
-    String token = (authState as Authenticated).accessToken;
-    var accountNotifier = ref.read(accountsProvider(token).notifier);
-    List<Account> accountList = ref.watch(accountsProvider(token));
-    if (accountList.isEmpty) {
-      accountNotifier.fetchAccounts();
-    }
+    final token = authState.accessToken;
+    final accountList = ref.watch(accountsProvider(token));
 
     return Scaffold(
-      appBar: AppBar(title: Text('Accounts')),
-      drawer: SideDrawer(currentScreen: "Accounts"),
+      appBar: AppBar(title: const Text('Accounts')),
+      drawer: const SideDrawer(currentScreen: "Accounts"),
       body: ListView.builder(
         itemCount: accountList.length,
         itemBuilder: (context, index) {

@@ -11,6 +11,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   TransactionNotifier(this._transactionService, this._ref) : super([]);
 
   Future<void> fetchTransactions(String monthNumber) async {
+    if (state.isNotEmpty) return;
     final loadingState = _ref.read(loadingProvider.notifier);
     loadingState.startLoading();
     try {
