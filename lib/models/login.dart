@@ -29,7 +29,7 @@ class LoginResponse {
       accessToken: json['access_token'],
       refreshToken: json['refresh_token'],
       tokenType: json['token_type'],
-      user: LoggedInUser.fromJson(json['user']),
+      user: json['user'] != null ? LoggedInUser.fromJson(json['user']) : null,
     );
   }
 

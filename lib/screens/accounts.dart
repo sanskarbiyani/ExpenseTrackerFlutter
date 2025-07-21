@@ -4,6 +4,7 @@ import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/providers/accounts.dart';
 import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/screens/auth.dart';
+import 'package:message_expense_tracker/screens/transaction_list.dart';
 import 'package:message_expense_tracker/widgets/drawer.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -55,7 +56,32 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       body: ListView.builder(
         itemCount: accountList.length,
         itemBuilder: (context, index) {
-          return ListTile(title: Text(accountList[index].name));
+          return ListTile(
+            title: Text(accountList[index].name),
+            subtitle: Text(accountList[index].description),
+            leading: Icon(Icons.flight),
+            trailing: DefaultTextStyle(
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.currency_rupee),
+                  Text(accountList[index].balance.toString()),
+                ],
+              ),
+            ),
+            onTap: () async {
+              await Future.delayed(const Duration(milliseconds: 100));
+              if (!context.mounted) return;
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (ctx) => const TransactionListScreen(),
+                ),
+              );
+            },
+          );
         },
       ),
     );

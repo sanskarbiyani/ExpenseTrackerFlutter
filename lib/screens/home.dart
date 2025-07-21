@@ -6,6 +6,7 @@ import 'package:message_expense_tracker/models/users.dart';
 import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/providers/user.dart';
 import 'package:message_expense_tracker/screens/add_expense.dart';
+import 'package:message_expense_tracker/screens/transaction_list.dart';
 import 'package:message_expense_tracker/widgets/drawer.dart';
 import 'package:message_expense_tracker/widgets/home_screen_filter.dart';
 import 'package:message_expense_tracker/widgets/summary_card.dart';
@@ -153,7 +154,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (ctx) => const TransactionListScreen(),
+                          ),
+                        );
+                      },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.all(0),
                         minimumSize: Size(0, 0),
@@ -161,6 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("All Expenses"),
                           SizedBox(width: 3),

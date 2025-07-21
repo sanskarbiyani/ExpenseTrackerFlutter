@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:message_expense_tracker/constants.dart';
+import 'package:message_expense_tracker/models/base_response.dart';
 import 'package:message_expense_tracker/models/login.dart';
 
 class AuthHttpClient extends http.BaseClient {
@@ -62,19 +63,33 @@ class AuthHttpClient extends http.BaseClient {
       );
 
       if (response.statusCode == 200) {
-        userDetails = LoginResponse.fromJson(jsonDecode(authDetails));
-        _accessToken = userDetails.accessToken;
-        await _secureStorage.write(
-          key: 'authDetails',
-          value: jsonEncode(userDetails.toJson()),
-        );
+        var jsonBody = jsonDecode(response.body);
+        var apiResponse = APIResponse.fromJson(jsonBody, (jsonData) {
+          if (jsonData == null) return null;
+          return LoginResponse.fromJson(jsonData as Map<String, dynamic>);
+        });
+        if (apiResponse.success && apiResponse.data != null) {
+          var newUserDetails = LoginResponse(
+            accessToken: apiResponse.data!.accessToken,
+            refreshToken: apiResponse.data!.refreshToken,
+            tokenType: apiResponse.data!.tokenType,
+            user: userDetails.user,
+          );
+          await _secureStorage.write(
+            key: 'authDetails',
+            value: jsonEncode(newUserDetails.toJson()),
+          );
+          return true;
+        } else {
+          await _secureStorage.delete(key: 'authDetails');
+          return false;
+        }
       } else {
         return false;
       }
     } catch (err) {
       return false;
     }
-    return true;
   }
 
   /// Helper to clone the request
