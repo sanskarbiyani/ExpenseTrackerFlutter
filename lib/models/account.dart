@@ -1,14 +1,14 @@
 class Account {
   final String name;
   final String description;
-  final double balance;
-  final int id;
+  double balance;
+  int? id;
 
   Account({
     required this.name,
     required this.description,
     required this.balance,
-    required this.id,
+    this.id,
   });
 
   factory Account.fromJson(Map<String, dynamic> json) {
@@ -16,7 +16,7 @@ class Account {
       name: json['name'],
       description: json['description'],
       balance: json['balance'],
-      id: json['id'],
+      id: json['id'] as int,
     );
   }
 
@@ -25,8 +25,10 @@ class Account {
       'name': name,
       'description': description,
       'balance': balance,
-      'id': id,
     };
+    if (id != null) {
+      map['id'] = id;
+    }
     return map;
   }
 }

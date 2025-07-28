@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:message_expense_tracker/models/account.dart';
 import 'package:message_expense_tracker/models/auth_state.dart';
 import 'package:message_expense_tracker/models/loading_state.dart';
 import 'package:message_expense_tracker/models/transaction.dart';
+import 'package:message_expense_tracker/providers/accounts.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/providers/transaction.dart';
 import 'package:message_expense_tracker/screens/auth.dart';
+import 'package:message_expense_tracker/services/common_service.dart';
 
 import '../providers/auth.dart';
 
@@ -20,35 +23,79 @@ class AddExpenseScreen extends ConsumerStatefulWidget {
 class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descInputController = TextEditingController();
+  final TextEditingController _titleInputController = TextEditingController();
 
-  List<String>? _accountList;
-  List<String>? _tagList;
-  String? _selectedAccount;
+  List<Account> _accountList = [];
+  List<String> _tagList = [];
+  Account? _selectedAccount;
   String? _selectedTag;
+  String _token = "";
   TransactionType _selectedTransactionType = TransactionType.expense;
 
   @override
   void initState() {
     super.initState();
     setState(() {
-      _accountList = ['Cash', 'BOB', 'ICICI'];
       _tagList = ['Travel', 'Food', 'Health'];
-      _selectedAccount = 'Cash';
       _selectedTag = 'Travel';
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAccounts(context);
+    });
+  }
+
+  void _showSnackBar(String text, {bool navigationRequired = false}) {
+    if (navigationRequired) {
+      Navigator.of(context).pop();
+    }
+    Future.delayed(Duration.zero, () {
+      CommonService.showSnackBar(text);
+    });
+  }
+
+  void _loadAccounts(BuildContext ctx) {
+    final authState = ref.read(authProvider);
+    if (authState is UnAuthenticated) {
+      Navigator.of(
+        ctx,
+      ).pushReplacement(MaterialPageRoute(builder: (context) => AuthScreen()));
+    }
+    final appToken = (authState as Authenticated).accessToken;
+    setState(() {
+      _token = appToken;
+    });
+
+    ref.read(accountsProvider(appToken).notifier).fetchAccounts();
   }
 
   void _addExpense() async {
     final amount = double.tryParse(_amountController.text);
     final desc = _descInputController.text;
+    final title = _titleInputController.text;
+
     if (amount == null) {
+      _showSnackBar("Amount field cannot empty");
+      return;
+    } else if (desc.isEmpty) {
+      _showSnackBar("Description cannot tbe empty");
+      return;
+    } else if (_selectedAccount == null) {
+      _showSnackBar("Selected account cannot be null");
+      return;
+    }
+
+    final selectedAccountId = _selectedAccount!.id;
+    if (selectedAccountId == null) {
+      _showSnackBar("Selected account id cannot be null");
       return;
     }
     Transaction transaction = Transaction(
       amount: amount,
       description: desc,
       transactionType: _selectedTransactionType,
-      title: '',
+      accountId: selectedAccountId,
+      title: title.isEmpty ? '' : title,
     );
 
     final authState = ref.read(authProvider);
@@ -66,44 +113,28 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     if (!mounted) return;
 
     if (loadingState is LoadingError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loadingState.errorMessage),
-          backgroundColor: Theme.of(context).colorScheme.errorContainer,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      _showSnackBar(loadingState.errorMessage);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      Navigator.of(context).pop();
+      _showSnackBar(msg, navigationRequired: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     var loading = ref.watch(loadingProvider);
-    if (_accountList == null || _tagList == null) {
+    final accountList = ref.watch(accountsProvider(_token));
+
+    if (loading is Loading || accountList.isEmpty || _tagList.isEmpty) {
       return Center(child: CircularProgressIndicator());
     }
 
+    if (loading is LoadingSuccess && _accountList.isEmpty) {
+      _accountList = accountList;
+      _selectedAccount ??= accountList.first; // only set if null
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text("Add")),
+      appBar: AppBar(title: Text("Add Transaction")),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
         child: Column(
@@ -113,7 +144,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 // Account dropdown
                 Expanded(
                   child: Container(
-                    padding: EdgeInsets.all(4),
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(50),
@@ -121,14 +152,29 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                     child: Align(
                       alignment: Alignment.center,
                       child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
+                        child: DropdownButton<Account>(
                           value: _selectedAccount,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          padding: const EdgeInsets.all(5),
+                          isExpanded: true,
                           items:
-                              _accountList!
+                              _accountList
                                   .map(
-                                    (tag) => DropdownMenuItem(
-                                      value: tag,
-                                      child: Text(tag),
+                                    (account) => DropdownMenuItem<Account>(
+                                      value: account,
+                                      child: Text(
+                                        account.name,
+                                        textAlign: TextAlign.center,
+                                        overflow:
+                                            TextOverflow
+                                                .ellipsis, // prevent wrapping
+                                        maxLines: 1, // single line
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium?.copyWith(
+                                          fontSize: 18, // smaller font
+                                        ),
+                                      ),
                                     ),
                                   )
                                   .toList(),
@@ -146,7 +192,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 // Tag dropdown
                 Expanded(
                   child: Container(
-                    padding: EdgeInsets.all(4),
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.secondaryContainer,
                       borderRadius: BorderRadius.circular(50),
@@ -156,12 +202,26 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _selectedTag,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          padding: const EdgeInsets.all(5),
+                          isExpanded: true,
                           items:
-                              _tagList!
+                              _tagList
                                   .map(
                                     (tag) => DropdownMenuItem(
                                       value: tag,
-                                      child: Text(tag),
+                                      child: Text(
+                                        tag,
+                                        textAlign:
+                                            TextAlign
+                                                .center, // prevent wrapping
+                                        maxLines: 1, // single line
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium?.copyWith(
+                                          fontSize: 18, // smaller font
+                                        ),
+                                      ),
                                     ),
                                   )
                                   .toList(),
@@ -178,41 +238,86 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               ],
             ),
             SizedBox(height: 20),
-            DropdownButton<TransactionType>(
-              value: _selectedTransactionType,
-              items:
-                  TransactionType.values
-                      .map(
-                        (type) => DropdownMenuItem<TransactionType>(
-                          value: type,
-                          child: Text(type.displayName),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (TransactionType? value) {
-                if (value == null) return;
-                setState(() {
-                  _selectedTransactionType = value;
-                });
-              },
+            Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Align(
+                alignment: Alignment.center,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<TransactionType>(
+                    value: _selectedTransactionType,
+                    style: Theme.of(context).textTheme.titleLarge,
+                    padding: const EdgeInsets.all(5),
+                    items:
+                        TransactionType.values
+                            .map(
+                              (type) => DropdownMenuItem<TransactionType>(
+                                value: type,
+                                child: Text(type.displayName),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (TransactionType? value) {
+                      if (value == null) return;
+                      setState(() {
+                        _selectedTransactionType = value;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 80),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 250, minWidth: 130),
+              child: TextField(
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+                controller: _titleInputController,
+                decoration: InputDecoration(
+                  hintText: 'Enter title',
+                  filled: true,
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
             ),
             SizedBox(height: 50),
-            SizedBox(
-              width: 200,
+            IntrinsicWidth(
               child: TextField(
                 controller: _amountController,
                 autofocus: true,
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   hintText: '00.00',
-                  prefixIcon: Icon(Icons.currency_rupee),
+                  prefix: Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: Icon(
+                      Icons.currency_rupee,
+                      size:
+                          Theme.of(context).textTheme.displaySmall?.fontSize ??
+                          24,
+                    ),
+                  ),
+                  isDense: true, // still keeps it compact
+                  border: InputBorder.none,
                 ),
-                inputFormatters: <TextInputFormatter>[
+                inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
-                style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.displayLarge!.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             SizedBox(height: 50),
@@ -223,8 +328,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                   maxLines: 3,
                   minLines: 1,
                   controller: _descInputController,
+                  textAlign: TextAlign.center,
                   decoration: InputDecoration(
-                    hintText: 'Description',
+                    hintText: 'Enter description',
                     filled: true,
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(
@@ -236,7 +342,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  style: Theme.of(context).textTheme.labelLarge,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
             ),

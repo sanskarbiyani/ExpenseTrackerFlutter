@@ -46,6 +46,7 @@ class Transaction {
   final String title;
   final String description;
   final TransactionType? transactionType;
+  final int accountId;
   int? id;
 
   Transaction({
@@ -53,6 +54,7 @@ class Transaction {
     required this.title,
     required this.description,
     required this.transactionType,
+    required this.accountId,
     this.id,
   });
 
@@ -62,6 +64,7 @@ class Transaction {
       amount: (json['amount'] as num).toDouble(),
       title: json['title'],
       description: json['description'],
+      accountId: json['account_id'],
       transactionType: TransactionType.fromInt(
         json['transaction_type'] as int?,
       ),
@@ -74,6 +77,7 @@ class Transaction {
       'title': title,
       'description': description,
       'transaction_type': transactionType?.toInt,
+      'account_id': accountId,
     };
     if (id != null) {
       map['id'] = id;

@@ -69,6 +69,7 @@ class AuthHttpClient extends http.BaseClient {
           return LoginResponse.fromJson(jsonData as Map<String, dynamic>);
         });
         if (apiResponse.success && apiResponse.data != null) {
+          _accessToken = apiResponse.data!.accessToken;
           var newUserDetails = LoginResponse(
             accessToken: apiResponse.data!.accessToken,
             refreshToken: apiResponse.data!.refreshToken,

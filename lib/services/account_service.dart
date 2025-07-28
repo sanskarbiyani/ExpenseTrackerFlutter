@@ -35,4 +35,32 @@ class AccountService {
       );
     }
   }
+
+  Future<APIResponse> addAccount(Account acc) async {
+    final client = AuthHttpClient(token);
+    try {
+      final jsonBody = jsonEncode(acc.toJson());
+      final response = await client.post(
+        Uri.parse("${AppConstants.backendBaseUrl}/accounts/create"),
+        body: jsonBody,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      final jsonData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return APIResponse.fromJson(jsonData, (jsonData) {
+          if (jsonData == null) return null;
+          return Account.fromJson(jsonData as Map<String, dynamic>);
+        });
+      } else {
+        return APIResponse.fromJson(jsonData, (jsonData) => null);
+      }
+    } catch (err) {
+      return APIResponse(
+        success: false,
+        data: null,
+        error: "Something went wrong! Please try again later.",
+      );
+    }
+  }
 }

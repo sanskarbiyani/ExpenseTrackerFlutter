@@ -5,6 +5,7 @@ import 'package:message_expense_tracker/providers/accounts.dart';
 import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/screens/auth.dart';
 import 'package:message_expense_tracker/screens/transaction_list.dart';
+import 'package:message_expense_tracker/widgets/add_account.dart';
 import 'package:message_expense_tracker/widgets/drawer.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,27 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     });
   }
 
+  void _openBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.7, // 70% of screen height
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: AddAccount(), // your custom widget
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -53,6 +75,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Accounts')),
       drawer: const SideDrawer(currentScreen: "Accounts"),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openBottomSheet,
+        child: Icon(Icons.add),
+      ),
       body: ListView.builder(
         itemCount: accountList.length,
         itemBuilder: (context, index) {

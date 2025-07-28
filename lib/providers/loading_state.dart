@@ -15,6 +15,10 @@ class LoadingNotifier extends StateNotifier<LoadingState> {
   void setError(String errorMessage) {
     state = LoadingError(errorMessage);
   }
+
+  void setIdle() {
+    state = const Idle();
+  }
 }
 
 final loadingProvider = StateNotifierProvider<LoadingNotifier, LoadingState>(

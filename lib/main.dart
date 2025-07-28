@@ -7,6 +7,7 @@ import 'package:message_expense_tracker/providers/auth.dart';
 import 'package:message_expense_tracker/screens/auth.dart';
 // My Files
 import 'package:message_expense_tracker/screens/home.dart';
+import 'package:message_expense_tracker/services/common_service.dart';
 import 'package:message_expense_tracker/theme_details.dart';
 
 void main() async {
@@ -31,6 +32,7 @@ class MyApp extends ConsumerWidget {
       darkTheme: darkTheme,
       theme: lightTheme,
       themeMode: ThemeMode.system,
+      navigatorKey: CommonService.navigatorKey,
       home: switch (state) {
         Authenticated _ => const HomeScreen(),
         UnAuthenticated _ => const AuthScreen(),

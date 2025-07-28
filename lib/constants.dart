@@ -1,4 +1,4 @@
 class AppConstants {
   static const String backendBaseUrl =
-      "https://expensetrackerbackend-wtq2.onrender.com";
+      "https://expense-tracker-858693364424.asia-south1.run.app";
 }

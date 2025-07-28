@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:message_expense_tracker/models/base_response.dart';
 import 'package:message_expense_tracker/models/transaction.dart';
+import 'package:message_expense_tracker/providers/accounts.dart';
 import 'package:message_expense_tracker/providers/loading_state.dart';
 import 'package:message_expense_tracker/services/transaction_service.dart';
 
@@ -38,6 +39,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
           .createTransaction(transaction);
       if (apiResponse.success) {
         loadingState.setSucess();
+        _ref.read(accountsProvider(_transactionService.token).notifier).updateAccount(transaction);
         transaction.id = apiResponse.data.id;
         state = [transaction, ...state];
         return apiResponse.data.message;
